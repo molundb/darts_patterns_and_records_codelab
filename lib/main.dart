@@ -31,15 +31,16 @@ class DocumentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (title, :modified) = document.metadata;
+    final formattedModifiedDate = formatDate(modified);
     final blocks = document.getBlocks();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Center(child: Text(title)),
       ),
       body: Column(
         children: [
-          Text('Last modified $modified'),
+          Text('Last modified $formattedModifiedDate'),
           Expanded(
             child: ListView.builder(
               itemCount: blocks.length,
@@ -64,19 +65,37 @@ class BlockWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    TextStyle? textStyle;
-    textStyle = switch (block.type) {
-      'h1' => Theme.of(context).textTheme.displayMedium,
-      'p' || 'checkbox' => Theme.of(context).textTheme.bodyMedium,
-      _ => Theme.of(context).textTheme.bodySmall
-    };
-
     return Container(
       margin: const EdgeInsets.all(8),
-      child: Text(
-        block.text,
-        style: textStyle,
-      ),
+      child: switch (block) {
+        HeaderBlock(:final text) => Text(
+          text,
+          style: Theme.of(context).textTheme.displayMedium,
+        ),
+        ParagraphBlock(:final text) => Text(text),
+        CheckboxBlock(:final text, :final isChecked) => Row(
+          children: [
+            Checkbox(value: isChecked, onChanged: (_) {}),
+            Text(text),
+          ],
+        ),
+      },
     );
   }
+}
+
+String formatDate(DateTime dateTime) {
+  final today = DateTime.now();
+  final difference = dateTime.difference(today);
+
+  return switch (difference) {
+    Duration(inDays: 0) => 'today',
+    Duration(inDays: 1) => 'tomorrow',
+    Duration(inDays: -1) => 'yesterday',
+    Duration(inDays: final days) when days > 7 => '${days ~/ 7} weeks from now',
+    Duration(inDays: final days) when days < -7 =>
+      '${days.abs() ~/ 7} weeks ago',
+    Duration(inDays: final days, isNegative: true) => '${days.abs()} days ago',
+    Duration(inDays: final days) => '$days days from now',
+  };
 }
