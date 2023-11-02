@@ -4,11 +4,17 @@ class Document {
   final Map<String, Object?> _json;
   Document() : _json = jsonDecode(documentJson);
 
-  (String, {DateTime modified}) get metadata {           // Add from here...
-    const title = 'My Document';
-    final now = DateTime.now();
-
-    return (title, modified: now);
+  (String, {DateTime modified}) get metadata {
+    if (_json.containsKey('metadata')) {
+      final metadataJson = _json['metadata'];
+      if (metadataJson is Map) {
+        final title = metadataJson['title'] as String;
+        final localModified =
+        DateTime.parse(metadataJson['modified'] as String);
+        return (title, modified: localModified);
+      }
+    }
+    throw const FormatException('Unexpected JSON');
   }
 }
 
